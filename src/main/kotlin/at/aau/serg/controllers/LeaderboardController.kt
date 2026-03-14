@@ -17,3 +17,4 @@ class LeaderboardController(
         gameResultService.getGameResults().sortedWith(compareBy({ -it.score }, { it.id }))
 
 }
+
