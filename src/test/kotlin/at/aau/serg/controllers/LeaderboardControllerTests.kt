@@ -41,7 +41,7 @@ class LeaderboardControllerTests {
     }
 
     @Test
-    fun test_getLeaderboard_shorterTimeFirstSorting()        {
+    fun test_getLeaderboard_sameScore_shorterTimeFirstSorting()        {
         val first = GameResult(1, "first", 20, 10.0)
         val second = GameResult(2, "second", 20, 15.0)
         val third = GameResult(3, "third", 20, 20.0)
@@ -100,4 +100,58 @@ class LeaderboardControllerTests {
         assertEquals(HttpStatus.BAD_REQUEST, exception.statusCode)
     }
 
+    @Test
+    fun test_getLeaderboard_rankZero_throwsBadRequest() {
+        val first = GameResult(1, "first", 20, 10.0)
+        val second = GameResult(2, "second", 15, 15.0)
+
+        whenever(mockedService.getGameResults()).thenReturn(listOf(first, second))
+
+        val exception = assertFailsWith<ResponseStatusException> {
+            controller.getLeaderboard(0)
+        }
+
+        verify(mockedService).getGameResults()
+        assertEquals(HttpStatus.BAD_REQUEST, exception.statusCode)
+    }
+
+    @Test
+    fun test_getLeaderboard_rankAtStart_returnsUpperRange() {
+        val p1 = GameResult(1, "p1", 100, 10.0)
+        val p2 = GameResult(2, "p2", 90, 10.0)
+        val p3 = GameResult(3, "p3", 80, 10.0)
+        val p4 = GameResult(4, "p4", 70, 10.0)
+        val p5 = GameResult(5, "p5", 60, 10.0)
+
+        whenever(mockedService.getGameResults()).thenReturn(listOf(p3, p1, p5, p2, p4))
+
+        val result: List<GameResult> = controller.getLeaderboard(1)
+
+        verify(mockedService).getGameResults()
+        assertEquals(4, result.size)
+        assertEquals(p1, result[0])
+        assertEquals(p2, result[1])
+        assertEquals(p3, result[2])
+        assertEquals(p4, result[3])
+    }
+
+    @Test
+    fun test_getLeaderboard_rankAtEnd_returnsLowerRange() {
+        val p1 = GameResult(1, "p1", 100, 10.0)
+        val p2 = GameResult(2, "p2", 90, 10.0)
+        val p3 = GameResult(3, "p3", 80, 10.0)
+        val p4 = GameResult(4, "p4", 70, 10.0)
+        val p5 = GameResult(5, "p5", 60, 10.0)
+
+        whenever(mockedService.getGameResults()).thenReturn(listOf(p4, p2, p5, p1, p3))
+
+        val result: List<GameResult> = controller.getLeaderboard(5)
+
+        verify(mockedService).getGameResults()
+        assertEquals(4, result.size)
+        assertEquals(p2, result[0])
+        assertEquals(p3, result[1])
+        assertEquals(p4, result[2])
+        assertEquals(p5, result[3])
+    }
 }
